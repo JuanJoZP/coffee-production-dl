@@ -1,95 +1,177 @@
-# 🧠 Vision-DeepLearnig
+# ☕ Modelo Predictivo para la Producción Cafetera
+
+## 📌 1. Resumen del problema y su impacto social
+
+La predicción precisa de cosechas es una necesidad crítica en la industria cafetera. Los métodos tradicionales, como el muestreo manual, son costosos, lentos y propensos al error humano. Esto afecta la logística, la planificación de la mano de obra y la negociación de contratos de exportación, especialmente en ventas a futuro.
+
+Este proyecto propone una herramienta automática basada en visión por computadora y aprendizaje profundo para estimar la producción de café a partir de imágenes de cafetos, facilitando la toma de decisiones estratégicas en el sector agrícola.
 
 ---
 
-## 🎯 Objetivo General
+## 🧠 2. Arquitectura y justificación de decisiones
 
-Los proyectos buscan diseñar e implementar una solución de visión computacional basada en *deep learning*. Cada trabajo debe contener un arquitectura funcional que combine al menos dos tareas diferentes de visión por computador, reentrenando al menos uno de los componentes sobre un conjunto de datos propio.
+La solución se compone de una cadena modular de modelos que colaboran para estimar la producción en kilos para un intervalo de fechas específico:
 
----
+### 🔹 1. YOLOv8 – Detección de Clústeres
 
-## 🧩 Instrucciones de Entrega
+Detecta agrupaciones de cerezas en las ramas del cafeto. Entrenado con imágenes propias y etiquetado manual, proporciona zonas de interés para análisis detallado.
 
-### 1️⃣ Clonar el Repositorio Asignado por el Docente
+### 🔹 2. YOLOv8 – Detección de Granos (Verdes y Rojos)
 
-Cada grupo debe clonar el repositorio oficial habilitado para el curso:  
+Detecta cerezas individuales dentro de los clústeres recortados. El enfoque de dos etapas mejora la precisión al eliminar el ruido visual del entorno.
 
-```bash 
-git clone https://github.com/USUARIO/TALLER_FINAL_IMPACTO_SOCIAL.git
-cd TALLER_FINAL
-``` 
+### 🔹 3. CNN – Estimación de Días a Cosecha
 
----
+Modelo de regresión que estima cuántos días faltan para la maduración de cada cereza, a partir de su imagen y su clase (roja o verde).
 
-### 2️⃣ Crear una Nueva Rama
+### 🔹 4. Cálculo de Producción
 
-Cada grupo debe trabajar en una rama nombrada de la siguiente forma:  
-📌 **Formato:** `grupoX_Nombre1_Nombre2`  
+Filtra las cerezas listas para cosecha dentro de un intervalo temporal definido por el usuario, calcula su número y multiplica por el peso promedio por grano para obtener el total en kilogramos.
 
-Ejemplo:  
-
-```bash 
-git checkout -b grupo3_CamilaLopez_SantiagoPerez
-git push origin grupo3_CamilaLopez_SantiagoPerez
-``` 
+> 🧩 **Resumen del pipeline:**  
+> `YOLOv8 Clusters → YOLOv8 Granos → CNN Regressor → Reporte de Producción`
 
 ---
 
-### 3️⃣ Estructura del Proyecto
+## 🗂️ 3. Dataset utilizado
 
-Cada equipo debe subir su trabajo dentro de una carpeta claramente identificada, con la siguiente convención de nombre:  
-📌 **Formato:** `NombreProblema_Nombre1_Nombre2/`
+-   📸 **Origen:** Fotografías tomadas directamente en un cafetal real.
+-   🔢 **Cantidad:** Se capturaron ~100 fotos; se seleccionaron 20 imágenes representativas para el proyecto.
+-   🏷️ **Etiquetado:**
+    -   _Clústeres:_ Usando LabelMe para marcar agrupaciones.
+    -   _Granos:_ Etiquetados por clase (rojo, verde) también usando LabelMe.
+    -   _Regresión:_ Con etiquetas manuales de días hasta cosecha, basadas en experiencia agrícola e investigación en la web.
 
-Ejemplo:
-
-```plaintext 
-📂 TALLER_FINAL_IMPACTO_SOCIAL/
-│── 📁 OcupacionTransporte_CamilaLopez_SantiagoPerez/
-│   │── 📁 data/                # Dataset usado, o scripts de carga desde fuente externa
-│   │── 📁 src/                 # Código fuente (Scripts/Notebook y otros artefactos como el yaml)
-│   │── 📜 run_pipeline.py      # Script principal de ejecución de extremo a extremo
-│   │── 📜 README.md            # Reporte técnico detallado del proyecto
-│   │── 📜 requirements.txt     # Archivo con las dependencias del proyecto
-│── 📁 OtroGrupo/
-│── 📜 README.md                # Archivo principal del repositorio (este documento)
-``` 
+> ✅ Dataset propio y controlado, adaptado al contexto caficultor.
 
 ---
 
-## 🧪 Ejecución del Pipeline
+## 📊 4. Métricas y resultados
 
-Desde Colab o localmente (si se desea probar fuera del entorno de evaluación), el pipeline se debe correr con:
+### 🍇 YOLOv8 – Detección de Clústeres
 
-```bash 
-python run_pipeline.py
-``` 
+| Métrica   | Valor |
+| --------- | ----- |
+| F1 Score  | 0.60  |
+| mAP@0.5   | 63.8% |
+| Precisión | 69.1% |
+| Recall    | 53.3% |
 
-Asegúrese de comentar dentro del script principal los pasos clave: carga de datos, preprocesamiento, inferencia, visualización y métricas.
+![Ejemplo de detección de clústeres](src/notebook_imgs/img3.png "Ejemplo de detección de clústeres")
+
+> Rendimiento aceptable como etapa inicial de segmentación gruesa.
 
 ---
 
-## 📦 Instalación de Dependencias
+### 🍒 YOLOv8 – Detección de Granos
 
-El archivo `requirements.txt` debe incluir todas las dependencias utilizadas. Desde Colab o entorno local:
+#### Clase Verde
 
-```bash 
+| Métrica   | Valor |
+| --------- | ----- |
+| F1 Score  | 0.95  |
+| mAP@0.5   | 97.8% |
+| Precisión | 93.9% |
+| Recall    | 97.0% |
+
+#### Clase Roja
+
+| Métrica   | Valor |
+| --------- | ----- |
+| F1 Score  | 0.95  |
+| mAP@0.5   | 97.8% |
+| Precisión | 99.4% |
+| Recall    | 91.7% |
+
+![Ejemplo de detección de granos](src/notebook_imgs/img4.png "Ejemplo de detección de granos")
+
+> 🎯 Precisión sobresaliente (>95%), incluso en condiciones reales de iluminación y complejidad visual.
+
+---
+
+### 📈 CNN – Regresión de Días a Cosecha
+
+| Métrica | Valor     |
+| ------- | --------- |
+| MAE     | 6.21 días |
+| RMSE    | 8.96 días |
+| R²      | 0.9434    |
+| MSE     | 80.27     |
+
+> 📅 El modelo logra una excelente correlación con datos reales de maduración, siendo útil para estimaciones precisas de cosecha.
+
+---
+
+## 🌀 5. Pipeline y Reporte de Producción
+
+Una vez entrenados los modelos, se integraron en un script ejecutable `run_pipeline.py` que procesa una imagen de cafeto completa y genera un reporte visual y estadístico del estado actual de la producción. El flujo final es:
+
+1. **Validación de la imagen de entrada.**
+2. **Detección de clústeres** de cerezas (gajos).
+3. **Recorte y detección de granos individuales** dentro de esos clústeres.
+4. **Predicción del tiempo de maduración** para cada grano detectado (modelo CNN).
+5. **Generación de visualización de detección** de granos clasificados por color.
+6. **Creación de un reporte de producción**, que incluye:
+    - Distribución por clase.
+    - Histograma de maduración.
+    - Proyección de cosecha acumulada.
+    - Producción estimada en kg.
+
+### 🎯 Resultado visual: detección final sobre la imagen original
+
+![Detección de Granos](src/notebook_imgs/img6.png)
+
+---
+
+### 📊 Reporte gráfico de producción generado automáticamente
+
+![Reporte de Producción](src/notebook_imgs/img7.png)
+
+---
+
+### 💻 Salida en consola del pipeline completo
+
+![Consola](src/notebook_imgs/img5.png)
+
+---
+
+Este pipeline permite a cualquier caficultor, ingeniero agrónomo o entidad de apoyo técnico analizar rápidamente el estado de un cultivo de café a partir de una simple imagen, brindando información clave para la planificación de la cosecha, la logística de recolección y la proyección de ventas futuras.
+
+## 6. Instalación y ejecución
+
+Debe clonar el repositorio e instalar las dependencias, preferiblemente en un entorno virtual para evitar conflictos (probado en python 3.10.15):
+
+```bash
+git clone https://github.com/JuanJoZP/coffee-production-dl
+cd coffee-production-dl/ProduccionCafe_JuanPacheco_JuanZuluaga
+python -m venv venv
+source venv/bin/activate # en linux
+venv\Scripts\activate.ps1 # en windows
 pip install -r requirements.txt
-``` 
+```
+
+Luego puede ejecutar `python run_pipeline.py --help` para ver como se usa el script. Aseguese de ejecutar el script desde la carpeta `ProduccionCafe_JuanPacheco_JuanZuluaga`.
+
+Ejemplo de uso:
+
+```bash
+python run_pipeline.py data/test_raw/IMG20250402163325.jpg 15
+```
+
+## 🚀 7. Lecciones aprendidas y trabajo futuro
+
+### ✔️ Lecciones clave
+
+-   Un pipeline por etapas especializadas mejora la precisión general del sistema.
+-   La calidad del etiquetado es clave para el rendimiento de los modelos.
+-   El enfoque de detección + regresión permite transformar imágenes en cifras útiles para la industria.
+
+### 🔮 Trabajo futuro
+
+-   📈 Aumentar el tamaño y variedad del dataset (condiciones climáticas, iluminación, cafetales diferentes).
+-   📹 Incluir seguimiento temporal con series de imágenes o video.
+-   📱 Desarrollar una interfaz web o app móvil para despliegue en campo por caficultores.
 
 ---
 
-## ✅ Checklist de Verificación
-
-| Ítem | Cumplido |
-|------|----------|
-| Dos tareas de visión combinadas | ✅ / ❌ |
-| Uso de deep learning predominante | ✅ / ❌ |
-| Dataset propio usado en el entrenamiento | ✅ / ❌ |
-| Script ejecutable de inicio a fin (`run_pipeline.py`) | ✅ / ❌ |
-| Estructura y nombramiento correctos del repositorio | ✅ / ❌ |
-| Reporte en `README.md` con las secciones solicitadas | ✅ / ❌ |
-| Dependencias claras en `requirements.txt` | ✅ / ❌ |
-| Código limpio y comentado | ✅ / ❌ |
-| Opcional: procesamiento de video | ✅ / ❌ |
-
----
+> 🧠 Este proyecto demuestra el potencial del aprendizaje profundo para transformar procesos agrícolas tradicionales, aportando eficiencia, precisión y escalabilidad al corazón de la economía cafetera.
